@@ -37,10 +37,21 @@ export function useTranscriptionSimulation(sequence: string) {
     }
 
     const nextIndex = generatedRna.length;
+    if (nextIndex >= cleanedSequence.length) {
+      setIsRunning(false);
+      return;
+    }
+
     const timer = window.setTimeout(() => {
       const dnaBase = cleanedSequence[nextIndex];
       const rnaBase = TRANSCRIPTION_MAP[dnaBase];
-      setGeneratedRna((current) => current + rnaBase);
+
+      if (rnaBase) {
+        setGeneratedRna((current) => current + rnaBase);
+      } else {
+        // Stop if we hit an unknown base (safety fallback)
+        setIsRunning(false);
+      }
     }, speed);
 
     return () => window.clearTimeout(timer);

@@ -45,8 +45,8 @@ export function TranscriptionFlow({
                 key={s}
                 onClick={() => setSpeed(s as TranscriptionSpeed)}
                 className={`px-3 py-1.5 rounded-full text-[10px] font-bold tracking-wider uppercase transition-all duration-200 ${speed === s
-                    ? "bg-accent text-white shadow-md scale-105"
-                    : "text-accent-strong/60 hover:text-accent-strong hover:bg-white/40"
+                  ? "bg-accent text-white shadow-md scale-105"
+                  : "text-accent-strong/60 hover:text-accent-strong hover:bg-white/40"
                   }`}
               >
                 {s === 500 ? "Lento" : s === 200 ? "Normal" : "Rápido"}
@@ -73,9 +73,9 @@ export function TranscriptionFlow({
               {dnaBases.map((base, index) => (
                 <div
                   key={`dna-${index}`}
-                  className={`flex items-center justify-center w-8 h-8 rounded-lg font-mono text-sm border transition-all duration-300 ${currentIndex === index
+                  className={`flex items-center justify-center w-8 h-8 rounded-lg font-mono text-sm font-bold border transition-all duration-300 ${currentIndex === index
                     ? "bg-accent text-white border-accent scale-110 shadow-lg z-10"
-                    : "bg-white/80 text-accent-strong border-black/5"
+                    : "bg-white/90 text-accent-strong/80 border-black/10"
                     }`}
                 >
                   {base}
@@ -101,10 +101,10 @@ export function TranscriptionFlow({
               {dnaBases.map((_, index) => (
                 <div
                   key={`rna-${index}`}
-                  className={`flex items-center justify-center w-8 h-8 rounded-lg font-mono text-sm border transition-all duration-300 ${rnaBases[index]
-                    ? "bg-accent-strong text-white border-accent-strong shadow-md"
+                  className={`flex items-center justify-center w-8 h-8 rounded-lg font-mono text-sm font-bold border transition-all duration-300 ${rnaBases[index]
+                    ? "bg-white text-accent-strong border-accent/30 shadow-sm"
                     : "bg-black/5 text-black/20 border-transparent"
-                    } ${currentIndex === index ? "scale-110" : ""}`}
+                    } ${currentIndex === index ? "scale-110 ring-2 ring-accent/30 bg-accent-soft" : ""}`}
                 >
                   {rnaBases[index] || "·"}
                 </div>

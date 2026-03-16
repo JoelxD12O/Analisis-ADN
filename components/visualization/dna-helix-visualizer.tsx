@@ -64,6 +64,7 @@ export function DNAHelixVisualizer({
   compact = false,
 }: DNAHelixVisualizerProps) {
   const cleanedSequence = useMemo(() => {
+    if (!sequence) return FALLBACK_SEQUENCE;
     const normalized = sequence.toUpperCase().replace(/[^ACGT]/g, "");
     return normalized || FALLBACK_SEQUENCE;
   }, [sequence]);
@@ -77,15 +78,17 @@ export function DNAHelixVisualizer({
 
     return cleanedSequence.split("").map((value, index) => {
       const base = value as Base;
-      const complement = COMPLEMENTS[base];
+      const complement = COMPLEMENTS[base] || "A";
       const angle = index * twist;
       const y = (cleanedSequence.length - 1) * step * 0.5 - index * step;
+
       const left = new THREE.Vector3(Math.cos(angle) * radius, y, Math.sin(angle) * radius);
       const right = new THREE.Vector3(
         Math.cos(angle + Math.PI) * radius,
         y,
         Math.sin(angle + Math.PI) * radius
       );
+
       const codonStart = Math.floor(index / 3) * 3;
       const dnaCodon = cleanedSequence.slice(codonStart, codonStart + 3);
       const rnaCodon = transcribeDna(dnaCodon);
@@ -102,25 +105,25 @@ export function DNAHelixVisualizer({
           id: `${index}-left`,
           side: "left" as const,
           base,
-          baseName: BASE_NAMES[base],
+          baseName: BASE_NAMES[base] || "Base",
           complement,
           position: index + 1,
           codon: dnaCodon || "--",
           aminoAcid,
           isMutated,
-          color: BASE_COLORS[base],
+          color: BASE_COLORS[base] || "#ccc",
         },
         rightDetail: {
           id: `${index}-right`,
           side: "right" as const,
           base: complement,
-          baseName: BASE_NAMES[complement],
+          baseName: BASE_NAMES[complement] || "Base",
           complement: base,
           position: index + 1,
           codon: dnaCodon || "--",
           aminoAcid,
           isMutated,
-          color: BASE_COLORS[complement],
+          color: BASE_COLORS[complement] || "#ccc",
         },
       };
     });
@@ -129,8 +132,8 @@ export function DNAHelixVisualizer({
   const helixScale = useMemo(() => {
     const step = compact ? 0.34 : 0.4;
     const naturalHeight = Math.max(1, (cleanedSequence.length - 1) * step);
-    const targetHeight = compact ? 4.4 : 6.2;
-    return Math.min(1, targetHeight / naturalHeight);
+    const targetHeight = compact ? 4.5 : 6.5;
+    return Math.min(1.2, targetHeight / naturalHeight);
   }, [cleanedSequence.length, compact]);
 
   return (
@@ -139,17 +142,15 @@ export function DNAHelixVisualizer({
         <Canvas
           dpr={[1, 1.5]}
           gl={{ antialias: true, alpha: true }}
-          camera={{ position: [0, 0, compact ? 7.5 : 9.5], fov: compact ? 48 : 46 }}
+          camera={{ position: [0, 0, compact ? 8 : 10], fov: 45 }}
           onPointerMissed={() => {
             onSelect?.(null);
             document.body.style.cursor = "default";
           }}
         >
-          <fog attach="fog" args={["#f6fbf8", 9, 18]} />
-          <ambientLight intensity={1.8} />
-          <directionalLight position={[6, 8, 6]} intensity={2.4} color="#ffffff" />
-          <pointLight position={[-4, 0, 4]} intensity={1.4} color="#8de7c9" />
-          <pointLight position={[4, -2, -4]} intensity={1.1} color="#ffd89a" />
+          <ambientLight intensity={1.5} />
+          <directionalLight position={[10, 10, 10]} intensity={2.0} color="#ffffff" />
+          <pointLight position={[-5, 5, 5]} intensity={1.2} color="#8de7c9" />
           <HelixScene
             pairs={pairs}
             compact={compact}
@@ -198,34 +199,36 @@ function HelixScene({
   const groupRef = useRef<THREE.Group>(null);
 
   useFrame((state) => {
-    const group = groupRef.current;
-    if (!group) {
-      return;
+    if (groupRef.current) {
+      groupRef.current.rotation.y = state.clock.elapsedTime * 0.3;
+      groupRef.current.position.y = Math.sin(state.clock.elapsedTime * 1.5) * 0.1;
     }
-
-    group.rotation.y = state.clock.elapsedTime * 0.28;
-    group.position.y = Math.sin(state.clock.elapsedTime * 1.2) * 0.12;
   });
 
-  const leftCurve = useMemo(
-    () => new THREE.CatmullRomCurve3(pairs.map((pair) => pair.left)),
-    [pairs]
-  );
-  const rightCurve = useMemo(
-    () => new THREE.CatmullRomCurve3(pairs.map((pair) => pair.right)),
-    [pairs]
-  );
+  const leftCurve = useMemo(() => {
+    if (pairs.length < 2) return null;
+    return new THREE.CatmullRomCurve3(pairs.map((p) => p.left));
+  }, [pairs]);
+
+  const rightCurve = useMemo(() => {
+    if (pairs.length < 2) return null;
+    return new THREE.CatmullRomCurve3(pairs.map((p) => p.right));
+  }, [pairs]);
 
   return (
     <group ref={groupRef} scale={scale}>
-      <mesh>
-        <tubeGeometry args={[leftCurve, 160, compact ? 0.055 : 0.07, 14, false]} />
-        <meshStandardMaterial color="#d2fff1" metalness={0.25} roughness={0.22} />
-      </mesh>
-      <mesh>
-        <tubeGeometry args={[rightCurve, 160, compact ? 0.055 : 0.07, 14, false]} />
-        <meshStandardMaterial color="#fff0cf" metalness={0.25} roughness={0.22} />
-      </mesh>
+      {leftCurve && (
+        <mesh>
+          <tubeGeometry args={[leftCurve, 120, compact ? 0.05 : 0.06, 12, false]} />
+          <meshStandardMaterial color="#d2fff1" metalness={0.2} roughness={0.3} />
+        </mesh>
+      )}
+      {rightCurve && (
+        <mesh>
+          <tubeGeometry args={[rightCurve, 120, compact ? 0.05 : 0.06, 12, false]} />
+          <meshStandardMaterial color="#fff0cf" metalness={0.2} roughness={0.3} />
+        </mesh>
+      )}
 
       {pairs.map((pair) => (
         <MemoBasePair
@@ -262,60 +265,41 @@ function BasePair({
   onSelect?: (detail: BaseDetail | null) => void;
 }) {
   const rungRef = useRef<THREE.Group>(null);
-  const center = useMemo(
-    () =>
-      new THREE.Vector3(
-        (pair.left.x + pair.right.x) / 2,
-        (pair.left.y + pair.right.y) / 2,
-        (pair.left.z + pair.right.z) / 2
-      ),
-    [pair.left, pair.right]
-  );
-  const distance = pair.left.distanceTo(pair.right);
+  const center = useMemo(() => {
+    return new THREE.Vector3().addVectors(pair.left, pair.right).multiplyScalar(0.5);
+  }, [pair.left, pair.right]);
+
+  const distance = useMemo(() => pair.left.distanceTo(pair.right), [pair.left, pair.right]);
   const quaternion = useMemo(() => {
-    const direction = new THREE.Vector3().subVectors(pair.right, pair.left).normalize();
-    return new THREE.Quaternion().setFromUnitVectors(new THREE.Vector3(0, 1, 0), direction);
+    const dir = new THREE.Vector3().subVectors(pair.right, pair.left).normalize();
+    return new THREE.Quaternion().setFromUnitVectors(new THREE.Vector3(0, 1, 0), dir);
   }, [pair.left, pair.right]);
 
   useFrame((state) => {
-    const rung = rungRef.current;
-    if (!rung) {
-      return;
+    if (rungRef.current) {
+      const pulse = pair.isMutated ? 1 + Math.sin(state.clock.elapsedTime * 4 + pair.index) * 0.05 : 1;
+      const hover = isActive || isHighlighted ? 1.15 : 1;
+      rungRef.current.scale.setScalar(pulse * hover);
     }
-
-    rung.position.y = center.y + Math.sin(state.clock.elapsedTime * 2 + pair.index * 0.35) * 0.045;
-    const mutationPulse = pair.isMutated ? 1 + Math.sin(state.clock.elapsedTime * 4 + pair.index) * 0.08 : 1;
-    const hoverBoost = isActive ? 1.12 : 1;
-    const focusBoost = isHighlighted ? 1.18 : 1;
-    rung.scale.setScalar(mutationPulse * hoverBoost * focusBoost);
   });
 
   return (
     <group ref={rungRef} position={center} quaternion={quaternion}>
       <mesh>
-        <cylinderGeometry args={[compact ? 0.04 : 0.05, compact ? 0.04 : 0.05, distance, 14]} />
+        <cylinderGeometry args={[compact ? 0.04 : 0.045, compact ? 0.04 : 0.045, distance, 12]} />
         <meshStandardMaterial
           color={
             pair.isMutated ? "#fb923c" : isHighlighted ? "#8de7c9" : isActive ? "#f8fafc" : "#d9e6f2"
           }
-          metalness={0.35}
-          roughness={0.18}
           emissive={isHighlighted ? "#167c63" : isActive ? "#94a3b8" : "#000000"}
-          emissiveIntensity={isHighlighted ? 0.35 : isActive ? 0.25 : 0}
+          emissiveIntensity={isHighlighted ? 0.4 : isActive ? 0.3 : 0}
         />
       </mesh>
-
-      {pair.isMutated ? (
-        <mesh position={[0, 0.34, 0]} renderOrder={10}>
-          <sphereGeometry args={[compact ? 0.08 : 0.1, 12, 12]} />
-          <meshBasicMaterial color="#fb923c" transparent opacity={0.95} depthTest={false} />
-        </mesh>
-      ) : null}
 
       <BaseSphere
         detail={pair.rightDetail}
         compact={compact}
-        distance={distance / 2}
+        offset={distance / 2}
         activeBaseId={activeBaseId}
         isHighlighted={isHighlighted}
         onSelect={onSelect}
@@ -323,7 +307,7 @@ function BasePair({
       <BaseSphere
         detail={pair.leftDetail}
         compact={compact}
-        distance={-distance / 2}
+        offset={-distance / 2}
         activeBaseId={activeBaseId}
         isHighlighted={isHighlighted}
         onSelect={onSelect}
@@ -335,57 +319,45 @@ function BasePair({
 function BaseSphere({
   detail,
   compact,
-  distance,
+  offset,
   activeBaseId,
   isHighlighted,
   onSelect,
 }: {
   detail: BaseDetail;
   compact: boolean;
-  distance: number;
+  offset: number;
   activeBaseId: string | null;
   isHighlighted: boolean;
   onSelect?: (detail: BaseDetail | null) => void;
 }) {
   const active = activeBaseId === detail.id;
 
-  const handlePointerEnter = (event: ThreeEvent<PointerEvent>) => {
-    event.stopPropagation();
-    document.body.style.cursor = "pointer";
-    onSelect?.(detail);
-  };
-
-  const handlePointerLeave = (event: ThreeEvent<PointerEvent>) => {
-    event.stopPropagation();
-    document.body.style.cursor = "default";
-  };
-
-  const handleClick = (event: ThreeEvent<MouseEvent>) => {
-    event.stopPropagation();
-    onSelect?.(detail);
-  };
-
   return (
     <mesh
-      position={[0, distance, 0]}
-      scale={active ? 1.16 : isHighlighted ? 1.1 : 1}
-      onPointerEnter={handlePointerEnter}
-      onPointerLeave={handlePointerLeave}
-      onClick={handleClick}
+      position={[0, offset, 0]}
+      scale={active ? 1.2 : isHighlighted ? 1.1 : 1}
+      onPointerEnter={(e) => {
+        e.stopPropagation();
+        document.body.style.cursor = "pointer";
+        onSelect?.(detail);
+      }}
+      onPointerLeave={(e) => {
+        e.stopPropagation();
+        document.body.style.cursor = "default";
+      }}
+      onClick={(e) => {
+        e.stopPropagation();
+        onSelect?.(detail);
+      }}
     >
-      <sphereGeometry args={[compact ? 0.16 : 0.19, 14, 14]} />
-      {detail.isMutated ? (
-        <mesh scale={1.55} renderOrder={10}>
-          <sphereGeometry args={[compact ? 0.16 : 0.19, 12, 12]} />
-          <meshBasicMaterial color="#fb923c" transparent opacity={0.28} depthTest={false} />
-        </mesh>
-      ) : null}
+      <sphereGeometry args={[compact ? 0.16 : 0.18, 16, 16]} />
       <meshStandardMaterial
         color={detail.isMutated ? "#fb923c" : isHighlighted ? "#7ff1cd" : detail.color}
         emissive={detail.isMutated ? "#9a3412" : isHighlighted ? "#167c63" : detail.color}
-        emissiveIntensity={detail.isMutated ? 0.85 : isHighlighted ? 0.45 : active ? 0.35 : 0.18}
-        metalness={0.18}
-        roughness={0.24}
+        emissiveIntensity={detail.isMutated ? 0.8 : isHighlighted ? 0.5 : active ? 0.4 : 0.2}
+        metalness={0.2}
+        roughness={0.3}
       />
     </mesh>
   );

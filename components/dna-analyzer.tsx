@@ -28,6 +28,43 @@ const DNAHelixVisualizer = dynamic(
 
 import type { BaseDetail } from "@/components/visualization/dna-helix-visualizer";
 
+const DNA_EXAMPLES = [
+  {
+    name: "Insulina (Fragmento)",
+    sequence: "ATGGCCCTGTGGATGCGCCTCCTGCCCCTGCTGGCCCTGCTGGCCCTCTGGGGACCTGAC",
+    description: "Codifica para una parte de la hormona insulina."
+  },
+  {
+    name: "Hemoglobina (Beta)",
+    sequence: "ATGGTGCACCTGACTCCTGAGGAGAAGTCTGCCGTTACTGCCCTGTGGGGCAAGGTGAAC",
+    description: "Parte de la proteína que transporta oxígeno."
+  },
+  {
+    name: "TATA Box",
+    sequence: "TATAAAAGGCGGGGGCGCGGCGCGGCA",
+    description: "Secuencia promotora común en el genoma."
+  },
+  {
+    name: "Anemia Falciforme (Mutación)",
+    sequence: "ATGGTGCACCTGACTCCTGAGGAGAAGTCTGCCGTTACTGCCCTGTGGGGCAAGGTGAAC",
+    sample: "ATGGTGCACCTGACTCCTGTGGAGAAGTCTGCCGTTACTGCCCTGTGGGGCAAGGTGAAC",
+    description: "Comparación entre hemoglobina normal y mutada (Glu6Val)."
+  },
+  {
+    name: "Colágeno (Fragmento)",
+    sequence: "GGTCCCCCTGGACCCCCTGGTCCTCCTGGCCCCCCTGGTCCCCCTGGTCCTCCTGGCCCC",
+    description: "Estructura repetitiva típica del colágeno."
+  },
+  {
+    name: "Proteína Spike (Fragmento)",
+    sequence: "ATGTTTGTTTTTCTTGTTTTATTGCCACTAGTCTCTAGTCAGTGTGTTAATCTTACAACC",
+    sample: "ATGTTTGTTTTTCTTGTTTTGTTGCCACTAGTCTCTAGTCAGTGTGTTAATCTTACAACC",
+    description: "Fragmento de la proteína con una mutación puntual."
+  }
+];
+
+const MAX_SEQUENCE_LENGTH = 300;
+
 export function DnaAnalyzer() {
   const [dnaInput, setDnaInput] = useState(exampleSequence);
   const [sampleInput, setSampleInput] = useState(exampleSample);
@@ -199,28 +236,72 @@ export function DnaAnalyzer() {
         <SectionCard
           eyebrow="Entrada"
           title="Carga tus secuencias"
-          description="Ingresa una secuencia principal y, si quieres comparar cambios, agrega una muestra secundaria."
+          description="Ingresa una secuencia principal o elige un ejemplo para empezar rápidamente."
         >
+          <div className="mb-6">
+            <span className="block text-xs font-bold text-accent-strong/60 uppercase tracking-widest mb-3">Carga rápida</span>
+            <div className="flex flex-wrap gap-2">
+              {DNA_EXAMPLES.map((ex) => (
+                <button
+                  key={ex.name}
+                  onClick={() => {
+                    setDnaInput(ex.sequence);
+                    setSampleInput(ex.sample || "");
+                    setSelectedBase(null);
+                  }}
+                  className="px-3 py-2 bg-white/60 hover:bg-accent hover:text-white border border-accent/10 rounded-xl text-xs font-medium transition-all duration-200 shadow-sm hover:shadow-md"
+                  title={ex.description}
+                >
+                  {ex.name}
+                </button>
+              ))}
+            </div>
+          </div>
+
           <div className="form-grid">
             <label className="field">
-              <span>Secuencia de ADN</span>
+              <div className="flex justify-between items-center">
+                <span>Secuencia de ADN</span>
+                <span className={`text-[10px] font-bold ${dnaInput.length > MAX_SEQUENCE_LENGTH ? "text-danger" : "text-black/30"}`}>
+                  {dnaInput.length}/{MAX_SEQUENCE_LENGTH}
+                </span>
+              </div>
               <textarea
                 value={dnaInput}
-                onChange={(event) => setDnaInput(event.target.value.toUpperCase())}
+                onChange={(event) => {
+                  const val = event.target.value.toUpperCase();
+                  if (val.length <= MAX_SEQUENCE_LENGTH + 50) { // Allow a bit over for typing but warn
+                    setDnaInput(val);
+                  }
+                }}
                 placeholder="Ejemplo: ATGGCTACCTTACGAGGTTAA"
                 rows={5}
+                className={dnaInput.length > MAX_SEQUENCE_LENGTH ? "border-danger/50" : ""}
               />
-              <small>Solo se procesan bases A, C, G y T.</small>
+              <small>Solo se procesan bases A, C, G y T. Máximo {MAX_SEQUENCE_LENGTH} bases.</small>
+              {dnaInput.length > MAX_SEQUENCE_LENGTH && (
+                <p className="field__error text-[11px]">La secuencia es demasiado larga para la visualización fluida.</p>
+              )}
               {!dnaValidation.isValid ? (
                 <p className="field__error">{dnaValidation.error}</p>
               ) : null}
             </label>
 
             <label className="field">
-              <span>Muestra para comparar</span>
+              <div className="flex justify-between items-center">
+                <span>Muestra para comparar</span>
+                <span className="text-[10px] font-bold text-black/30">
+                  {sampleInput.length} bases
+                </span>
+              </div>
               <textarea
                 value={sampleInput}
-                onChange={(event) => setSampleInput(event.target.value.toUpperCase())}
+                onChange={(event) => {
+                  const val = event.target.value.toUpperCase();
+                  if (val.length <= MAX_SEQUENCE_LENGTH + 50) {
+                    setSampleInput(val);
+                  }
+                }}
                 placeholder="Opcional: secuencia de igual longitud"
                 rows={5}
               />
@@ -323,8 +404,8 @@ export function DnaAnalyzer() {
 
             <div className="codon-strip">
               {analysis?.proteins.length ? (
-                analysis.proteins.map((protein) => (
-                  <span className="codon-chip" key={`strip-${protein.codon}-${protein.aminoAcid}`}>
+                analysis.proteins.map((protein, idx) => (
+                  <span className="codon-chip" key={`strip-${protein.codon}-${idx}`}>
                     {protein.codon}
                   </span>
                 ))
@@ -335,8 +416,8 @@ export function DnaAnalyzer() {
 
             <div className="protein-list">
               {analysis?.proteins.length ? (
-                analysis.proteins.map((protein) => (
-                  <article className="protein-pill" key={`${protein.codon}-${protein.aminoAcid}`}>
+                analysis.proteins.map((protein, idx) => (
+                  <article className="protein-pill" key={`pill-${protein.codon}-${idx}`}>
                     <span>{protein.codon}</span>
                     <strong>{protein.aminoAcid}</strong>
                   </article>
