@@ -1,7 +1,7 @@
 "use client";
 
 import { memo, useMemo, useRef } from "react";
-import { Canvas, ThreeEvent, useFrame } from "@react-three/fiber";
+import { Canvas, useFrame } from "@react-three/fiber";
 import * as THREE from "three";
 import { getAminoAcidFromRnaCodon, transcribeDna } from "@/lib/dna";
 

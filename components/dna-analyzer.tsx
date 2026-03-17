@@ -8,10 +8,15 @@ import { TranscriptionFlow } from "@/components/ui/transcription-flow";
 import { useTranscriptionSimulation } from "@/hooks/use-transcription-simulation";
 import {
   analyzeDna,
-  detectMutations,
   normalizeSequence,
   validateDnaSequence,
 } from "@/lib/dna";
+import {
+  analyzeMutations,
+  summarizeMutationImpact,
+  type MutationClassification,
+  type MutationDetail,
+} from "@/utils/mutationAnalysis";
 
 const exampleSequence = "ATGGCTACCTTACGAGGTTAA";
 const exampleSample = "ATGGCTTCCTTACGCGGTTAA";
@@ -65,6 +70,171 @@ const DNA_EXAMPLES = [
 
 const MAX_SEQUENCE_LENGTH = 300;
 
+const mutationToneMap: Record<
+  MutationClassification,
+  { badge: string; accent: string; icon: string }
+> = {
+  Silenciosa: {
+    badge: "bg-emerald-100 text-emerald-700 border border-emerald-200",
+    accent: "text-emerald-700",
+    icon: "OK",
+  },
+  Missense: {
+    badge: "bg-amber-100 text-amber-700 border border-amber-200",
+    accent: "text-amber-700",
+    icon: "!",
+  },
+  Nonsense: {
+    badge: "bg-rose-100 text-rose-700 border border-rose-200",
+    accent: "text-rose-700",
+    icon: "!!",
+  },
+};
+
+type MutationAiState = {
+  loading: boolean;
+  explanation: string | null;
+  error: string | null;
+};
+
+function MutationInsightCard({ mutation }: { mutation: MutationDetail }) {
+  const tone = mutationToneMap[mutation.type];
+  const [aiState, setAiState] = useState<MutationAiState>({
+    loading: false,
+    explanation: null,
+    error: null,
+  });
+
+  const loadAiExplanation = async () => {
+    if (aiState.loading || aiState.explanation) {
+      return;
+    }
+
+    setAiState({
+      loading: true,
+      explanation: null,
+      error: null,
+    });
+
+    try {
+      const response = await fetch("/api/mutations/explain", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          position: mutation.position,
+          originalCodon: mutation.originalCodon,
+          mutatedCodon: mutation.mutatedCodon,
+          originalAA: mutation.originalAminoAcid,
+          mutatedAA: mutation.mutatedAminoAcid,
+          mutationType: mutation.type.toUpperCase(),
+        }),
+      });
+
+      const data = (await response.json()) as {
+        explanation?: string;
+        error?: string;
+      };
+
+      if (!response.ok || !data.explanation) {
+        throw new Error(data.error || "No fue posible generar la explicacion.");
+      }
+
+      setAiState({
+        loading: false,
+        explanation: data.explanation,
+        error: null,
+      });
+    } catch (error) {
+      setAiState({
+        loading: false,
+        explanation: null,
+        error:
+          error instanceof Error
+            ? error.message
+            : "No fue posible generar la explicacion.",
+      });
+    }
+  };
+
+  return (
+    <details
+      className="rounded-[1.3rem] border border-black/8 bg-white/75 px-4 py-3 shadow-[0_14px_50px_rgba(15,23,42,0.05)]"
+      onToggle={(event) => {
+        if ((event.currentTarget as HTMLDetailsElement).open) {
+          void loadAiExplanation();
+        }
+      }}
+    >
+      <summary className="flex cursor-pointer list-none flex-col gap-3 md:flex-row md:items-center md:justify-between">
+        <div className="flex flex-wrap items-center gap-3">
+          <strong className="text-sm text-accent-strong">
+            Posicion: {mutation.position}
+          </strong>
+          <span className="text-sm text-black/60">
+            Cambio: {mutation.reference} {"->"} {mutation.sample}
+          </span>
+          <span className={`rounded-full px-3 py-1 text-xs font-bold ${tone.badge}`}>
+            {mutation.type}
+          </span>
+        </div>
+        <span className={`text-sm font-medium ${tone.accent}`}>
+          {tone.icon} {mutation.impact}
+        </span>
+      </summary>
+
+      <div className="mt-3 grid gap-2 border-t border-black/6 pt-3 text-sm md:grid-cols-2">
+        <div className="rounded-2xl bg-black/[0.03] px-3 py-2">
+          <span className="block text-[10px] font-bold uppercase tracking-[0.18em] text-black/35">
+            Codon original
+          </span>
+          <code className="mt-1 block font-mono text-accent-strong">
+            {mutation.originalCodon} / {mutation.originalRnaCodon}
+          </code>
+        </div>
+        <div className="rounded-2xl bg-black/[0.03] px-3 py-2">
+          <span className="block text-[10px] font-bold uppercase tracking-[0.18em] text-black/35">
+            Codon mutado
+          </span>
+          <code className="mt-1 block font-mono text-accent-strong">
+            {mutation.mutatedCodon} / {mutation.mutatedRnaCodon}
+          </code>
+        </div>
+        <div className="rounded-2xl bg-black/[0.03] px-3 py-2">
+          <span className="block text-[10px] font-bold uppercase tracking-[0.18em] text-black/35">
+            Aminoacido original
+          </span>
+          <strong className="mt-1 block text-accent-strong">
+            {mutation.originalAminoAcid}
+          </strong>
+        </div>
+        <div className="rounded-2xl bg-black/[0.03] px-3 py-2">
+          <span className="block text-[10px] font-bold uppercase tracking-[0.18em] text-black/35">
+            Aminoacido mutado
+          </span>
+          <strong className="mt-1 block text-accent-strong">
+            {mutation.mutatedAminoAcid}
+          </strong>
+        </div>
+      </div>
+
+      <div className="mt-3 rounded-2xl border border-black/6 bg-black/[0.02] px-3 py-3">
+        <span className="block text-[10px] font-bold uppercase tracking-[0.18em] text-black/35">
+          Interpretacion IA
+        </span>
+        <p className="mt-2 text-sm leading-relaxed text-black/65">
+          {aiState.loading
+            ? "Generando explicacion biologica..."
+            : aiState.explanation ||
+              aiState.error ||
+              "Abre este detalle para solicitar una interpretacion breve con IA."}
+        </p>
+      </div>
+    </details>
+  );
+}
+
 export function DnaAnalyzer() {
   const [dnaInput, setDnaInput] = useState(exampleSequence);
   const [sampleInput, setSampleInput] = useState(exampleSample);
@@ -90,8 +260,9 @@ export function DnaAnalyzer() {
 
   const mutations =
     analysis && hasComparableSample
-      ? detectMutations(analysis.normalizedSequence, sampleValidation.normalized)
+      ? analyzeMutations(analysis.normalizedSequence, sampleValidation.normalized)
       : [];
+  const mutationSummary = summarizeMutationImpact(mutations);
 
   const sampleLengthError =
     sampleValidation.isValid &&
@@ -438,19 +609,40 @@ export function DnaAnalyzer() {
         >
           {hasComparableSample ? (
             mutations.length ? (
-              <div className="mutation-table">
-                <div className="mutation-table__head">
-                  <span>Posicion</span>
-                  <span>Referencia</span>
-                  <span>Muestra</span>
-                </div>
-                {mutations.map((mutation) => (
-                  <div className="mutation-table__row" key={mutation.position}>
-                    <strong>{mutation.position}</strong>
-                    <span>{mutation.reference}</span>
-                    <span>{mutation.sample}</span>
+              <div className="space-y-4">
+                <div className="rounded-[1.4rem] border border-black/8 bg-white/70 p-4 shadow-[0_18px_60px_rgba(15,23,42,0.06)]">
+                  <span className="block text-[10px] font-bold uppercase tracking-[0.22em] text-black/35">
+                    Resumen de impacto
+                  </span>
+                  <div className="mt-2 space-y-1 text-sm text-accent-strong">
+                    <p className="font-semibold">
+                      {mutationSummary.potentiallyRelevant} mutaci{mutationSummary.potentiallyRelevant === 1 ? "on" : "ones"} potencialmente relevante{mutationSummary.potentiallyRelevant === 1 ? "" : "s"} detectada{mutationSummary.potentiallyRelevant === 1 ? "" : "s"}.
+                    </p>
+                    <p className="text-black/55">
+                      {mutationSummary.functionalImpact} mutaci{mutationSummary.functionalImpact === 1 ? "on" : "ones"} con impacto funcional.
+                    </p>
                   </div>
-                ))}
+                  <div className="mt-4 flex flex-wrap gap-2 text-xs font-semibold">
+                    <span className="rounded-full bg-emerald-100 px-3 py-1 text-emerald-700">
+                      Silenciosas: {mutationSummary.silenciosa}
+                    </span>
+                    <span className="rounded-full bg-amber-100 px-3 py-1 text-amber-700">
+                      Missense: {mutationSummary.missense}
+                    </span>
+                    <span className="rounded-full bg-rose-100 px-3 py-1 text-rose-700">
+                      Nonsense: {mutationSummary.nonsense}
+                    </span>
+                  </div>
+                </div>
+
+                <div className="space-y-3">
+                  {mutations.map((mutation) => (
+                    <MutationInsightCard
+                      key={mutation.position}
+                      mutation={mutation}
+                    />
+                  ))}
+                </div>
               </div>
             ) : (
               <p className="empty-state">

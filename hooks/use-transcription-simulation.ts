@@ -11,34 +11,37 @@ const TRANSCRIPTION_MAP: Record<string, string> = {
 
 export type TranscriptionSpeed = 80 | 200 | 500;
 
+type SimulationState = {
+  sourceSequence: string;
+  generatedRna: string;
+  isRunning: boolean;
+};
+
 export function useTranscriptionSimulation(sequence: string) {
   const cleanedSequence = useMemo(
     () => sequence.toUpperCase().replace(/[^ACGT]/g, ""),
     [sequence]
   );
-  const [generatedRna, setGeneratedRna] = useState("");
-  const [isRunning, setIsRunning] = useState(false);
+  const [simulationState, setSimulationState] = useState<SimulationState>({
+    sourceSequence: cleanedSequence,
+    generatedRna: "",
+    isRunning: false,
+  });
   const [speed, setSpeed] = useState<TranscriptionSpeed>(200);
 
+  const generatedRna =
+    simulationState.sourceSequence === cleanedSequence ? simulationState.generatedRna : "";
+  const isRunning =
+    simulationState.sourceSequence === cleanedSequence && simulationState.isRunning;
   const simulationActive = isRunning && generatedRna.length < cleanedSequence.length;
 
   useEffect(() => {
-    // Reset when sequence changes
-    setGeneratedRna("");
-    setIsRunning(false);
-  }, [cleanedSequence]);
-
-  useEffect(() => {
     if (!simulationActive || !cleanedSequence) {
-      if (isRunning && generatedRna.length === cleanedSequence.length) {
-        setIsRunning(false);
-      }
       return;
     }
 
     const nextIndex = generatedRna.length;
     if (nextIndex >= cleanedSequence.length) {
-      setIsRunning(false);
       return;
     }
 
@@ -47,10 +50,22 @@ export function useTranscriptionSimulation(sequence: string) {
       const rnaBase = TRANSCRIPTION_MAP[dnaBase];
 
       if (rnaBase) {
-        setGeneratedRna((current) => current + rnaBase);
+        setSimulationState((current) => {
+          if (current.sourceSequence !== cleanedSequence || !current.isRunning) {
+            return current;
+          }
+
+          return {
+            ...current,
+            generatedRna: current.generatedRna + rnaBase,
+          };
+        });
       } else {
         // Stop if we hit an unknown base (safety fallback)
-        setIsRunning(false);
+        setSimulationState((current) => ({
+          ...current,
+          isRunning: false,
+        }));
       }
     }, speed);
 
@@ -73,17 +88,23 @@ export function useTranscriptionSimulation(sequence: string) {
       return;
     }
 
-    setGeneratedRna("");
-    setIsRunning(true);
+    setSimulationState({
+      sourceSequence: cleanedSequence,
+      generatedRna: "",
+      isRunning: true,
+    });
   };
 
   const stop = () => {
-    setIsRunning(false);
+    setSimulationState((current) => ({
+      ...current,
+      isRunning: false,
+    }));
   };
 
   return {
     cleanedSequence,
-    currentIndex: simulationActive ? currentIndex : (isRunning && generatedRna.length === cleanedSequence.length ? null : null),
+    currentIndex: simulationActive ? currentIndex : null,
     currentStep: simulationActive ? currentStep : null,
     generatedRna,
     isRunning: simulationActive || (isRunning && generatedRna.length < cleanedSequence.length),

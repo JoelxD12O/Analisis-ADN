@@ -1,3 +1,5 @@
+import { transcribeDNAtoRNA, translateCodon } from "@/utils/mutationAnalysis";
+
 export type DnaCounts = {
   a: number;
   c: number;
@@ -25,75 +27,8 @@ export type DnaAnalysis = {
   proteins: Translation[];
 };
 
-const CODON_TABLE: Record<string, string> = {
-  AUG: "Metionina",
-  UUU: "Fenilalanina",
-  UUC: "Fenilalanina",
-  UUA: "Leucina",
-  UUG: "Leucina",
-  CUU: "Leucina",
-  CUC: "Leucina",
-  CUA: "Leucina",
-  CUG: "Leucina",
-  AUU: "Isoleucina",
-  AUC: "Isoleucina",
-  AUA: "Isoleucina",
-  GUU: "Valina",
-  GUC: "Valina",
-  GUA: "Valina",
-  GUG: "Valina",
-  UCU: "Serina",
-  UCC: "Serina",
-  UCA: "Serina",
-  UCG: "Serina",
-  CCU: "Prolina",
-  CCC: "Prolina",
-  CCA: "Prolina",
-  CCG: "Prolina",
-  ACU: "Treonina",
-  ACC: "Treonina",
-  ACA: "Treonina",
-  ACG: "Treonina",
-  GCU: "Alanina",
-  GCC: "Alanina",
-  GCA: "Alanina",
-  GCG: "Alanina",
-  UAU: "Tirosina",
-  UAC: "Tirosina",
-  CAU: "Histidina",
-  CAC: "Histidina",
-  CAA: "Glutamina",
-  CAG: "Glutamina",
-  AAU: "Asparagina",
-  AAC: "Asparagina",
-  AAA: "Lisina",
-  AAG: "Lisina",
-  GAU: "Acido aspartico",
-  GAC: "Acido aspartico",
-  GAA: "Acido glutamico",
-  GAG: "Acido glutamico",
-  UGU: "Cisteina",
-  UGC: "Cisteina",
-  UGG: "Triptofano",
-  CGU: "Arginina",
-  CGC: "Arginina",
-  CGA: "Arginina",
-  CGG: "Arginina",
-  AGU: "Serina",
-  AGC: "Serina",
-  AGA: "Arginina",
-  AGG: "Arginina",
-  GGU: "Glicina",
-  GGC: "Glicina",
-  GGA: "Glicina",
-  GGG: "Glicina",
-  UAA: "STOP",
-  UAG: "STOP",
-  UGA: "STOP",
-};
-
 export function getAminoAcidFromRnaCodon(codon: string) {
-  return CODON_TABLE[codon] ?? "Desconocido";
+  return translateCodon(codon);
 }
 
 export function normalizeSequence(value: string) {
@@ -150,7 +85,7 @@ export function analyzeDna(sequence: string): DnaAnalysis {
 }
 
 export function transcribeDna(sequence: string) {
-  return normalizeSequence(sequence).replaceAll("T", "U");
+  return transcribeDNAtoRNA(sequence);
 }
 
 export function translateCodons(rna: string) {
