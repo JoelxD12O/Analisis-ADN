@@ -1,0 +1,45 @@
+service: analisis-adn
+
+frameworkVersion: '3'
+
+provider:
+  name: aws
+  runtime: python3.10
+  region: us-east-1
+  stage: dev
+
+  environment:
+    TABLE_NAME: MutacionesTable
+
+  iam:
+    role:
+      statements:
+        - Effect: Allow
+          Action:
+            - dynamodb:GetItem
+            - dynamodb:Query
+            - dynamodb:Scan
+          Resource:
+            - arn:aws:dynamodb:us-east-1:*:table/MutacionesTable
+
+functions:
+  analyzeMutation:
+    handler: handler.analyze
+    events:
+      - httpApi:
+          path: /analyze
+          method: post
+
+resources:
+  Resources:
+    MutacionesTable:
+      Type: AWS::DynamoDB::Table
+      Properties:
+        TableName: MutacionesTable
+        BillingMode: PAY_PER_REQUEST
+        AttributeDefinitions:
+          - AttributeName: id
+            AttributeType: S
+        KeySchema:
+          - AttributeName: id
+            KeyType: HASH

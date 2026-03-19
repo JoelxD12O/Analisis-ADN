@@ -33,42 +33,67 @@ const DNAHelixVisualizer = dynamic(
 
 import type { BaseDetail } from "@/components/visualization/dna-helix-visualizer";
 
-const DNA_EXAMPLES = [
+const DATABASE_DETECTION_EXAMPLES = [
   {
-    name: "Insulina (Fragmento)",
-    sequence: "ATGGCCCTGTGGATGCGCCTCCTGCCCCTGCTGGCCCTGCTGGCCCTCTGGGGACCTGAC",
-    description: "Codifica para una parte de la hormona insulina."
+    name: "HBB Glu->Val",
+    sequence: "ATGGAGCCC",
+    sample: "ATGGTGCCC",
+    badge: "Missense",
+    description: "Detecta GAG -> GTG. Asociado en la BD a anemia falciforme.",
   },
   {
-    name: "Hemoglobina (Beta)",
-    sequence: "ATGGTGCACCTGACTCCTGAGGAGAAGTCTGCCGTTACTGCCCTGTGGGGCAAGGTGAAC",
-    description: "Parte de la proteína que transporta oxígeno."
+    name: "PAH Glu->STOP",
+    sequence: "ATGGAACCC",
+    sample: "ATGTAACCC",
+    badge: "Nonsense",
+    description: "Detecta GAA -> TAA. Asociado en la BD a fenilcetonuria.",
   },
   {
-    name: "TATA Box",
-    sequence: "TATAAAAGGCGGGGGCGCGGCGCGGCA",
-    description: "Secuencia promotora común en el genoma."
+    name: "BRCA1 Tyr->STOP",
+    sequence: "ATGTACCCC",
+    sample: "ATGTAACCC",
+    badge: "Nonsense",
+    description: "Detecta TAC -> TAA. Asociado en la BD a cancer de mama hereditario.",
   },
   {
-    name: "Anemia Falciforme (Mutación)",
-    sequence: "ATGGTGCACCTGACTCCTGAGGAGAAGTCTGCCGTTACTGCCCTGTGGGGCAAGGTGAAC",
-    sample: "ATGGTGCACCTGACTCCTGTGGAGAAGTCTGCCGTTACTGCCCTGTGGGGCAAGGTGAAC",
-    description: "Comparación entre hemoglobina normal y mutada (Glu6Val)."
+    name: "BRCA1 Lys->Arg",
+    sequence: "ATGAAACCC",
+    sample: "ATGAGACCC",
+    badge: "Missense",
+    description: "Detecta AAA -> AGA. Caso clinico registrado en la BD.",
   },
   {
-    name: "Colágeno (Fragmento)",
-    sequence: "GGTCCCCCTGGACCCCCTGGTCCTCCTGGCCCCCCTGGTCCCCCTGGTCCTCCTGGCCCC",
-    description: "Estructura repetitiva típica del colágeno."
+    name: "TP53 Arg->STOP",
+    sequence: "ATGCGACCC",
+    sample: "ATGTGACCC",
+    badge: "Nonsense",
+    description: "Detecta CGA -> TGA. Asociado en la BD a cancer.",
   },
   {
-    name: "Proteína Spike (Fragmento)",
-    sequence: "ATGTTTGTTTTTCTTGTTTTATTGCCACTAGTCTCTAGTCAGTGTGTTAATCTTACAACC",
-    sample: "ATGTTTGTTTTTCTTGTTTTGTTGCCACTAGTCTCTAGTCAGTGTGTTAATCTTACAACC",
-    description: "Fragmento de la proteína con una mutación puntual."
-  }
+    name: "BRCA2 Trp->STOP",
+    sequence: "ATGTGGCCC",
+    sample: "ATGTGACCC",
+    badge: "Nonsense",
+    description: "Detecta TGG -> TGA. Asociado en la BD a cancer de mama/ovario.",
+  },
+  {
+    name: "CFTR Gly->Val",
+    sequence: "ATGGGTCCC",
+    sample: "ATGGTTCCC",
+    badge: "Missense",
+    description: "Detecta GGT -> GTT. Variante de CFTR presente en la BD.",
+  },
+  {
+    name: "PAH Glu->Asp",
+    sequence: "ATGGAACCC",
+    sample: "ATGGACCCC",
+    badge: "Missense",
+    description: "Detecta GAA -> GAC. Variante de PAH registrada en la BD.",
+  },
 ];
 
 const MAX_SEQUENCE_LENGTH = 300;
+const EXAMPLES_PER_PAGE = 4;
 
 const mutationToneMap: Record<
   MutationClassification,
@@ -94,6 +119,11 @@ const mutationToneMap: Record<
 type MutationAiState = {
   loading: boolean;
   explanation: string | null;
+  report: {
+    Resumen: string;
+    "Interpretacion molecular": string;
+    "Relevancia clinica": string;
+  } | null;
   error: string | null;
 };
 
@@ -102,6 +132,7 @@ function MutationInsightCard({ mutation }: { mutation: MutationDetail }) {
   const [aiState, setAiState] = useState<MutationAiState>({
     loading: false,
     explanation: null,
+    report: null,
     error: null,
   });
 
@@ -113,6 +144,7 @@ function MutationInsightCard({ mutation }: { mutation: MutationDetail }) {
     setAiState({
       loading: true,
       explanation: null,
+      report: null,
       error: null,
     });
 
@@ -134,6 +166,13 @@ function MutationInsightCard({ mutation }: { mutation: MutationDetail }) {
 
       const data = (await response.json()) as {
         explanation?: string;
+        backend?: {
+          report?: {
+            Resumen: string;
+            "Interpretacion molecular": string;
+            "Relevancia clinica": string;
+          };
+        };
         error?: string;
       };
 
@@ -144,12 +183,14 @@ function MutationInsightCard({ mutation }: { mutation: MutationDetail }) {
       setAiState({
         loading: false,
         explanation: data.explanation,
+        report: data.backend?.report ?? null,
         error: null,
       });
     } catch (error) {
       setAiState({
         loading: false,
         explanation: null,
+        report: null,
         error:
           error instanceof Error
             ? error.message
@@ -223,13 +264,32 @@ function MutationInsightCard({ mutation }: { mutation: MutationDetail }) {
         <span className="block text-[10px] font-bold uppercase tracking-[0.18em] text-black/35">
           Interpretacion IA
         </span>
-        <p className="mt-2 text-sm leading-relaxed text-black/65">
-          {aiState.loading
-            ? "Generando explicacion biologica..."
-            : aiState.explanation ||
+        {aiState.loading ? (
+          <p className="mt-2 text-sm leading-relaxed text-black/65">
+            Generando explicacion biologica...
+          </p>
+        ) : aiState.report ? (
+          <div className="mt-2 space-y-3 text-sm leading-relaxed text-black/65">
+            <div>
+              <strong className="block text-accent-strong">Resumen</strong>
+              <p>{aiState.report.Resumen}</p>
+            </div>
+            <div>
+              <strong className="block text-accent-strong">Interpretacion molecular</strong>
+              <p>{aiState.report["Interpretacion molecular"]}</p>
+            </div>
+            <div>
+              <strong className="block text-accent-strong">Relevancia clinica</strong>
+              <p>{aiState.report["Relevancia clinica"]}</p>
+            </div>
+          </div>
+        ) : (
+          <p className="mt-2 text-sm leading-relaxed text-black/65">
+            {aiState.explanation ||
               aiState.error ||
               "Abre este detalle para solicitar una interpretacion breve con IA."}
-        </p>
+          </p>
+        )}
       </div>
     </details>
   );
@@ -239,6 +299,8 @@ export function DnaAnalyzer() {
   const [dnaInput, setDnaInput] = useState(exampleSequence);
   const [sampleInput, setSampleInput] = useState(exampleSample);
   const [selectedBase, setSelectedBase] = useState<BaseDetail | null>(null);
+  const [examplesPage, setExamplesPage] = useState(0);
+  const [selectedExampleName, setSelectedExampleName] = useState<string | null>(null);
 
   const deferredDnaInput = useDeferredValue(dnaInput);
   const deferredSampleInput = useDeferredValue(sampleInput);
@@ -279,6 +341,13 @@ export function DnaAnalyzer() {
   const mutationPositions = mutations.map((mutation) => mutation.position);
   const displayedSequence = analysis?.normalizedSequence ?? normalizeSequence(dnaInput);
   const transcriptionSimulation = useTranscriptionSimulation(displayedSequence);
+  const totalExamplePages = Math.ceil(
+    DATABASE_DETECTION_EXAMPLES.length / EXAMPLES_PER_PAGE
+  );
+  const paginatedExamples = DATABASE_DETECTION_EXAMPLES.slice(
+    examplesPage * EXAMPLES_PER_PAGE,
+    (examplesPage + 1) * EXAMPLES_PER_PAGE
+  );
 
   return (
     <main className="dna-page">
@@ -407,23 +476,67 @@ export function DnaAnalyzer() {
         <SectionCard
           eyebrow="Entrada"
           title="Carga tus secuencias"
-          description="Ingresa una secuencia principal o elige un ejemplo para empezar rápidamente."
+          description="Ingresa una secuencia principal o usa ejemplos clínicos que sí existen en la base de datos."
         >
           <div className="mb-6">
-            <span className="block text-xs font-bold text-accent-strong/60 uppercase tracking-widest mb-3">Carga rápida</span>
-            <div className="flex flex-wrap gap-2">
-              {DNA_EXAMPLES.map((ex) => (
+            <div className="mb-3 flex items-center justify-between gap-3">
+              <span className="block text-xs font-bold text-accent-strong/60 uppercase tracking-widest">
+              Ejemplos detectables en la BD
+              </span>
+              <div className="flex items-center gap-2">
                 <button
-                  key={ex.name}
-                  onClick={() => {
-                    setDnaInput(ex.sequence);
-                    setSampleInput(ex.sample || "");
-                    setSelectedBase(null);
-                  }}
-                  className="px-3 py-2 bg-white/60 hover:bg-accent hover:text-white border border-accent/10 rounded-xl text-xs font-medium transition-all duration-200 shadow-sm hover:shadow-md"
-                  title={ex.description}
+                  type="button"
+                  onClick={() => setExamplesPage((page) => Math.max(0, page - 1))}
+                  disabled={examplesPage === 0}
+                  className="rounded-full border border-black/10 bg-white/70 px-3 py-1 text-xs font-semibold text-accent-strong disabled:cursor-not-allowed disabled:opacity-40"
                 >
-                  {ex.name}
+                  Anterior
+                </button>
+                <span className="text-[11px] font-bold uppercase tracking-[0.16em] text-black/35">
+                  {examplesPage + 1} / {totalExamplePages}
+                </span>
+                <button
+                  type="button"
+                  onClick={() =>
+                    setExamplesPage((page) => Math.min(totalExamplePages - 1, page + 1))
+                  }
+                  disabled={examplesPage >= totalExamplePages - 1}
+                  className="rounded-full border border-black/10 bg-white/70 px-3 py-1 text-xs font-semibold text-accent-strong disabled:cursor-not-allowed disabled:opacity-40"
+                >
+                  Siguiente
+                </button>
+              </div>
+            </div>
+            <div className="grid gap-3 md:grid-cols-2">
+              {paginatedExamples.map((example) => (
+                <button
+                  key={example.name}
+                  onClick={() => {
+                    setDnaInput(example.sequence);
+                    setSampleInput(example.sample);
+                    setSelectedBase(null);
+                    setSelectedExampleName(example.name);
+                  }}
+                  className={`rounded-2xl border px-4 py-3 text-left shadow-[0_14px_40px_rgba(15,23,42,0.05)] transition-all duration-200 hover:-translate-y-[1px] hover:bg-white ${
+                    selectedExampleName === example.name
+                      ? "border-emerald-400 bg-emerald-50/80 ring-2 ring-emerald-200"
+                      : "border-black/8 bg-white/70 hover:border-accent/25"
+                  }`}
+                  title={example.description}
+                >
+                  <div className="flex items-center justify-between gap-3">
+                    <strong className="text-sm text-accent-strong">{example.name}</strong>
+                    <span className="rounded-full bg-accent/10 px-2 py-1 text-[10px] font-bold uppercase tracking-[0.14em] text-accent-strong">
+                      {example.badge}
+                    </span>
+                  </div>
+                  <p className="mt-2 text-xs leading-relaxed text-black/55">
+                    {example.description}
+                  </p>
+                  <div className="mt-3 flex flex-col gap-1 text-[11px] font-mono text-black/55">
+                    <span>REF: {example.sequence}</span>
+                    <span>SAMPLE: {example.sample}</span>
+                  </div>
                 </button>
               ))}
             </div>
@@ -443,6 +556,7 @@ export function DnaAnalyzer() {
                   const val = event.target.value.toUpperCase();
                   if (val.length <= MAX_SEQUENCE_LENGTH + 50) { // Allow a bit over for typing but warn
                     setDnaInput(val);
+                    setSelectedExampleName(null);
                   }
                 }}
                 placeholder="Ejemplo: ATGGCTACCTTACGAGGTTAA"
@@ -471,6 +585,7 @@ export function DnaAnalyzer() {
                   const val = event.target.value.toUpperCase();
                   if (val.length <= MAX_SEQUENCE_LENGTH + 50) {
                     setSampleInput(val);
+                    setSelectedExampleName(null);
                   }
                 }}
                 placeholder="Opcional: secuencia de igual longitud"

@@ -9,6 +9,38 @@ export type MutationExplanationInput = {
   mutationType: string;
 };
 
+export type BackendMutationAnalysis = {
+  mutation_type: string;
+  effect: string;
+  aa_change: {
+    from: string | null;
+    to: string | null;
+  };
+};
+
+export type BackendClinicalData = {
+  match_found: boolean;
+  disease: string | null;
+  significance: string | null;
+};
+
+export type BackendMutationReport = {
+  Resumen: string;
+  "Interpretacion molecular": string;
+  "Relevancia clinica": string;
+};
+
+export type BackendMutationResponse = {
+  input: {
+    codon_original: string | null;
+    codon_mutated: string | null;
+  };
+  analysis: BackendMutationAnalysis;
+  clinical: BackendClinicalData;
+  report: BackendMutationReport;
+  match: Record<string, unknown> | null;
+};
+
 const GITHUB_MODELS_URL = "https://models.github.ai/inference/chat/completions";
 const GITHUB_MODELS_VERSION = "2026-03-10";
 const DEFAULT_MODEL = "openai/gpt-4.1";
@@ -93,6 +125,37 @@ Ejemplos:
 Genera solo una explicacion breve basada en los datos proporcionados.`;
 }
 
+function buildBackendDrivenPrompt(payload: BackendMutationResponse) {
+  return `Eres un asistente experto en genetica molecular, bioinformatica y medicina. Analiza la mutacion usando SOLO los datos estructurados proporcionados.
+
+Debes responder en 3 partes y con estos titulos exactos:
+
+Resumen:
+Interpretacion molecular:
+Relevancia clinica:
+
+Reglas:
+- Explica el tipo de mutacion: missense, nonsense, silent, frameshift o expansion.
+- Describe que ocurre a nivel molecular.
+- Explica el posible impacto en la funcion de la proteina.
+- Si hay enfermedad asociada, describela brevemente y relaciona la mutacion con ella.
+- Si la significancia es "pathogenic" o "likely_pathogenic", enfatiza su relevancia clinica.
+- Si match_found es false, indica que no hay evidencia suficiente y explica solo el impacto teorico.
+- No inventes enfermedades ni exageres conclusiones.
+- Usa lenguaje claro, cientifico y conciso.
+- No repitas innecesariamente el JSON.
+
+Datos:
+${JSON.stringify(
+    {
+      analysis: payload.analysis,
+      clinical: payload.clinical,
+    },
+    null,
+    2
+  )}`;
+}
+
 export async function generateMutationImpactExplanation(
   input: MutationExplanationInput
 ) {
@@ -120,6 +183,61 @@ export async function generateMutationImpactExplanation(
         {
           role: "user",
           content: buildMutationPrompt(input),
+        },
+      ],
+    }),
+    cache: "no-store",
+  });
+
+  if (!response.ok) {
+    const errorText = await response.text();
+    throw new Error(`GitHub Models request failed: ${response.status} ${errorText}`);
+  }
+
+  const data = (await response.json()) as {
+    choices?: Array<{
+      message?: {
+        content?: string;
+      };
+    }>;
+  };
+
+  const content = data.choices?.[0]?.message?.content?.trim();
+
+  if (!content) {
+    throw new Error("GitHub Models response did not contain explanation text");
+  }
+
+  return content;
+}
+
+export async function generateBackendDrivenMutationExplanation(
+  payload: BackendMutationResponse
+) {
+  const token = getRequiredEnv("GITHUB_TOKEN");
+  const model = process.env.GITHUB_MODELS_MODEL?.trim() || DEFAULT_MODEL;
+
+  const response = await fetch(GITHUB_MODELS_URL, {
+    method: "POST",
+    headers: {
+      Accept: "application/vnd.github+json",
+      Authorization: `Bearer ${token}`,
+      "Content-Type": "application/json",
+      "X-GitHub-Api-Version": GITHUB_MODELS_VERSION,
+    },
+    body: JSON.stringify({
+      model,
+      temperature: 0.2,
+      max_tokens: 220,
+      messages: [
+        {
+          role: "system",
+          content:
+            "Responde en espanol, con tono biomedico profesional, usando solo la evidencia proporcionada y sin exagerar conclusiones.",
+        },
+        {
+          role: "user",
+          content: buildBackendDrivenPrompt(payload),
         },
       ],
     }),
