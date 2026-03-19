@@ -1,4 +1,4 @@
-from dna_toolkit import dna_analysis, dna_transcription, detect_point_mutations
+from dna_tookit import dna_analysis, dna_transcription, detect_point_mutations
 
 # --------------------- GENERAL DNA ANALYSIS -----------------
 while True:
@@ -36,6 +36,14 @@ while True:
 
     if not set(sample).issubset({"A", "C", "G", "T"}):
         print("Error: Enter only A, C, G, or T.")
+        continue
+
+    if len(sample) != len(reference):
+        print("Error: Sequence must have the same length as reference.")
+        continue
+
+    if len(sample) % 3 != 0:
+        print("Error: Sequence length must be multiple of 3.")
         continue
 
     break
