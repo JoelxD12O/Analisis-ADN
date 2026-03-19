@@ -2,6 +2,7 @@
 
 import dynamic from "next/dynamic";
 import { useDeferredValue, useState } from "react";
+import { DnaHelix } from "@/components/ui/dna-helix";
 import { SectionCard } from "@/components/ui/section-card";
 import { StatCard } from "@/components/ui/stat-card";
 import { TranscriptionFlow } from "@/components/ui/transcription-flow";
@@ -18,9 +19,6 @@ import {
   type MutationDetail,
 } from "@/utils/mutationAnalysis";
 
-const exampleSequence = "ATGGCTACCTTACGAGGTTAA";
-const exampleSample = "ATGGCTTCCTTACGCGGTTAA";
-
 const DNAHelixVisualizer = dynamic(
   () =>
     import("@/components/visualization/dna-helix-visualizer").then(
@@ -28,6 +26,7 @@ const DNAHelixVisualizer = dynamic(
     ),
   {
     ssr: false,
+    loading: () => <DnaHelix />,
   }
 );
 
@@ -36,64 +35,101 @@ import type { BaseDetail } from "@/components/visualization/dna-helix-visualizer
 const DATABASE_DETECTION_EXAMPLES = [
   {
     name: "HBB Glu->Val",
-    sequence: "ATGGAGCCC",
-    sample: "ATGGTGCCC",
+    sequence: "ATGCCCGAGGAACTGCCCTAA",
+    sample: "ATGCCCGTGGAACTGCCCTAA",
     badge: "Missense",
     description: "Detecta GAG -> GTG. Asociado en la BD a anemia falciforme.",
   },
   {
+    name: "HBB Leu->His",
+    sequence: "ATGCCCCTCGAACTGCCCTAA",
+    sample: "ATGCCCCACGAACTGCCCTAA",
+    badge: "Missense",
+    description: "Detecta CTC -> CAC. Asociado en la BD a hemoglobinopatia variante.",
+  },
+  {
+    name: "CFTR Gly->Val",
+    sequence: "ATGCCCGGTGAACTGCCCTAA",
+    sample: "ATGCCCGTTGAACTGCCCTAA",
+    badge: "Missense",
+    description: "Detecta GGT -> GTT. Variante de CFTR presente en la BD.",
+  },
+  {
     name: "PAH Glu->STOP",
-    sequence: "ATGGAACCC",
-    sample: "ATGTAACCC",
+    sequence: "ATGCCCGAAGAACTGCCCTAA",
+    sample: "ATGCCCTAAGAACTGCCCTAA",
     badge: "Nonsense",
     description: "Detecta GAA -> TAA. Asociado en la BD a fenilcetonuria.",
   },
   {
     name: "BRCA1 Tyr->STOP",
-    sequence: "ATGTACCCC",
-    sample: "ATGTAACCC",
+    sequence: "ATGCCCTACGAACTGCCCTAA",
+    sample: "ATGCCCTAAGAACTGCCCTAA",
     badge: "Nonsense",
     description: "Detecta TAC -> TAA. Asociado en la BD a cancer de mama hereditario.",
   },
   {
     name: "BRCA1 Lys->Arg",
-    sequence: "ATGAAACCC",
-    sample: "ATGAGACCC",
+    sequence: "ATGCCCAAAGAACTGCCCTAA",
+    sample: "ATGCCCAGAGAACTGCCCTAA",
     badge: "Missense",
     description: "Detecta AAA -> AGA. Caso clinico registrado en la BD.",
   },
   {
     name: "TP53 Arg->STOP",
-    sequence: "ATGCGACCC",
-    sample: "ATGTGACCC",
+    sequence: "ATGCCCCGAGAACTGCCCTAA",
+    sample: "ATGCCCTGAGAACTGCCCTAA",
     badge: "Nonsense",
     description: "Detecta CGA -> TGA. Asociado en la BD a cancer.",
   },
   {
     name: "BRCA2 Trp->STOP",
-    sequence: "ATGTGGCCC",
-    sample: "ATGTGACCC",
+    sequence: "ATGCCCTGGGAACTGCCCTAA",
+    sample: "ATGCCCTGAGAACTGCCCTAA",
     badge: "Nonsense",
     description: "Detecta TGG -> TGA. Asociado en la BD a cancer de mama/ovario.",
   },
   {
-    name: "CFTR Gly->Val",
-    sequence: "ATGGGTCCC",
-    sample: "ATGGTTCCC",
+    name: "TP53 Arg->Gln",
+    sequence: "ATGCCCCGGGAACTGCCCTAA",
+    sample: "ATGCCCCAGGAACTGCCCTAA",
     badge: "Missense",
-    description: "Detecta GGT -> GTT. Variante de CFTR presente en la BD.",
+    description: "Detecta CGG -> CAG. Variante de TP53 presente en la BD.",
   },
   {
-    name: "PAH Glu->Asp",
-    sequence: "ATGGAACCC",
-    sample: "ATGGACCCC",
+    name: "KRAS Gly->Asp",
+    sequence: "ATGCCCGGTGAACTGCCCTAA",
+    sample: "ATGCCCGATGAACTGCCCTAA",
     badge: "Missense",
-    description: "Detecta GAA -> GAC. Variante de PAH registrada en la BD.",
+    description: "Detecta GGT -> GAT. Asociado en la BD a cancer colorrectal.",
+  },
+  {
+    name: "KRAS Gly->Val",
+    sequence: "ATGCCCGGTGAACTGCCCTAA",
+    sample: "ATGCCCGTTGAACTGCCCTAA",
+    badge: "Missense",
+    description: "Detecta GGT -> GTT. Asociado en la BD a cancer pancreatico.",
+  },
+  {
+    name: "EGFR Leu->Met",
+    sequence: "ATGCCCCTGGAACTGCCCTAA",
+    sample: "ATGCCCATGGAACTGCCCTAA",
+    badge: "Missense",
+    description: "Detecta CTG -> ATG. Asociado en la BD a cancer de pulmon.",
   },
 ];
 
 const MAX_SEQUENCE_LENGTH = 300;
 const EXAMPLES_PER_PAGE = 4;
+const DEFAULT_DATABASE_EXAMPLE = DATABASE_DETECTION_EXAMPLES[0];
+
+function findMatchingExampleName(sequence: string, sample: string) {
+  const match = DATABASE_DETECTION_EXAMPLES.find(
+    (example) => example.sequence === sequence && example.sample === sample
+  );
+
+  return match?.name ?? null;
+}
 
 const mutationToneMap: Record<
   MutationClassification,
@@ -124,6 +160,7 @@ type MutationAiState = {
     "Interpretacion molecular": string;
     "Relevancia clinica": string;
   } | null;
+  matchFound: boolean | null;
   error: string | null;
 };
 
@@ -133,6 +170,7 @@ function MutationInsightCard({ mutation }: { mutation: MutationDetail }) {
     loading: false,
     explanation: null,
     report: null,
+    matchFound: null,
     error: null,
   });
 
@@ -145,6 +183,7 @@ function MutationInsightCard({ mutation }: { mutation: MutationDetail }) {
       loading: true,
       explanation: null,
       report: null,
+      matchFound: null,
       error: null,
     });
 
@@ -167,6 +206,9 @@ function MutationInsightCard({ mutation }: { mutation: MutationDetail }) {
       const data = (await response.json()) as {
         explanation?: string;
         backend?: {
+          clinical?: {
+            match_found?: boolean;
+          };
           report?: {
             Resumen: string;
             "Interpretacion molecular": string;
@@ -184,6 +226,7 @@ function MutationInsightCard({ mutation }: { mutation: MutationDetail }) {
         loading: false,
         explanation: data.explanation,
         report: data.backend?.report ?? null,
+        matchFound: data.backend?.clinical?.match_found ?? null,
         error: null,
       });
     } catch (error) {
@@ -191,6 +234,7 @@ function MutationInsightCard({ mutation }: { mutation: MutationDetail }) {
         loading: false,
         explanation: null,
         report: null,
+        matchFound: null,
         error:
           error instanceof Error
             ? error.message
@@ -291,16 +335,32 @@ function MutationInsightCard({ mutation }: { mutation: MutationDetail }) {
           </p>
         )}
       </div>
+
+      {aiState.matchFound === false ? (
+        <div className="mt-3 rounded-2xl border border-amber-200/80 bg-amber-50/80 px-3 py-3 text-sm leading-relaxed text-amber-900/80">
+          <strong className="block text-[11px] uppercase tracking-[0.18em] text-amber-700">
+            Nota
+          </strong>
+          <p className="mt-2">
+            No encontramos esta variante exacta en la base de datos clinica. Por eso la
+            interpretacion mostrada corresponde a un analisis molecular inferido a partir
+            del cambio de codon y aminoacido, sin una asociacion clinica especifica cargada
+            en la BD.
+          </p>
+        </div>
+      ) : null}
     </details>
   );
 }
 
 export function DnaAnalyzer() {
-  const [dnaInput, setDnaInput] = useState(exampleSequence);
-  const [sampleInput, setSampleInput] = useState(exampleSample);
+  const [dnaInput, setDnaInput] = useState(DEFAULT_DATABASE_EXAMPLE.sequence);
+  const [sampleInput, setSampleInput] = useState(DEFAULT_DATABASE_EXAMPLE.sample);
   const [selectedBase, setSelectedBase] = useState<BaseDetail | null>(null);
   const [examplesPage, setExamplesPage] = useState(0);
-  const [selectedExampleName, setSelectedExampleName] = useState<string | null>(null);
+  const [selectedExampleName, setSelectedExampleName] = useState<string | null>(
+    DEFAULT_DATABASE_EXAMPLE.name
+  );
 
   const deferredDnaInput = useDeferredValue(dnaInput);
   const deferredSampleInput = useDeferredValue(sampleInput);
@@ -375,7 +435,7 @@ export function DnaAnalyzer() {
             <span>Mutaciones</span>
           </div>
           <TranscriptionFlow
-            dnaSequence={displayedSequence || exampleSequence}
+            dnaSequence={displayedSequence || DEFAULT_DATABASE_EXAMPLE.sequence}
             generatedRna={transcriptionSimulation.generatedRna}
             currentIndex={transcriptionSimulation.currentIndex}
             currentStep={transcriptionSimulation.currentStep}
@@ -400,6 +460,7 @@ export function DnaAnalyzer() {
         <div className="hero__panel">
           <div className="hero__helix">
             <DNAHelixVisualizer
+              key={`hero-${displayedSequence}`}
               sequence={displayedSequence}
               mutationPositions={mutationPositions}
               highlightedPosition={transcriptionSimulation.currentIndex}
@@ -556,7 +617,7 @@ export function DnaAnalyzer() {
                   const val = event.target.value.toUpperCase();
                   if (val.length <= MAX_SEQUENCE_LENGTH + 50) { // Allow a bit over for typing but warn
                     setDnaInput(val);
-                    setSelectedExampleName(null);
+                    setSelectedExampleName(findMatchingExampleName(val, sampleInput));
                   }
                 }}
                 placeholder="Ejemplo: ATGGCTACCTTACGAGGTTAA"
@@ -585,7 +646,7 @@ export function DnaAnalyzer() {
                   const val = event.target.value.toUpperCase();
                   if (val.length <= MAX_SEQUENCE_LENGTH + 50) {
                     setSampleInput(val);
-                    setSelectedExampleName(null);
+                    setSelectedExampleName(findMatchingExampleName(dnaInput, val));
                   }
                 }}
                 placeholder="Opcional: secuencia de igual longitud"
@@ -674,6 +735,7 @@ export function DnaAnalyzer() {
           <div className="result-block">
             <div className="result-helix">
               <DNAHelixVisualizer
+                key={`results-${displayedSequence}`}
                 sequence={displayedSequence}
                 mutationPositions={mutationPositions}
                 highlightedPosition={transcriptionSimulation.currentIndex}
