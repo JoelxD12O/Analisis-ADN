@@ -1,0 +1,46 @@
+gene,codon_original,codon_mutated,aa_original,aa_mutated,mutation_type,disease,clinical_significance
+,HBB,GAG,GTG,Glu,Val,missense,Anemia falciforme,patogénica
+,HBB,CTC,CAC,Leu,His,missense,Hemoglobinopatía variante,patogénica
+,CFTR,TTT,---,Phe,Deleción,frameshift,Fibrosis quística,patogénica
+,CFTR,GGT,GTT,Gly,Val,missense,Fibrosis quística (variante leve),variable
+,PAH,GAA,TAA,Glu,STOP,nonsense,Fenilcetonuria,patogénica
+,PAH,GAA,GAC,Glu,Asp,missense,Fenilcetonuria (variante),probablemente patogénica
+,BRCA1,TAC,TAA,Tyr,STOP,nonsense,Cáncer de mama hereditario,patogénica
+,BRCA1,AAA,AGA,Lys,Arg,missense,Cáncer de mama (riesgo),probablemente patogénica
+,BRCA2,TGG,TGA,Trp,STOP,nonsense,Cáncer de mama/ovario,patogénica
+,TP53,CGA,TGA,Arg,STOP,nonsense,Cáncer,patogénica
+,TP53,CGG,CAG,Arg,Gln,missense,Cáncer,patogénica
+,TP53,GGC,GAC,Gly,Asp,missense,Cáncer,patogénica
+,BRAF,GTG,GAG,Val,Glu,missense,Melanoma,patogénica
+,BRAF,GGT,GAT,Gly,Asp,missense,Cáncer tiroideo,patogénica
+,KRAS,GGT,GAT,Gly,Asp,missense,Cáncer colorrectal,patogénica
+,KRAS,GGT,GTT,Gly,Val,missense,Cáncer pancreático,patogénica
+,EGFR,CTG,ATG,Leu,Met,missense,Cáncer de pulmón,patogénica
+,EGFR,GAA,GGA,Glu,Gly,missense,Cáncer de pulmón,patogénica
+,DMD,TGG,TGA,Trp,STOP,nonsense,Distrofia muscular de Duchenne,patogénica
+,DMD,AAA,ATA,Lys,Ile,missense,Distrofia muscular,probablemente patogénica
+,MECP2,CGA,TGA,Arg,STOP,nonsense,Síndrome de Rett,patogénica
+,MECP2,GGA,GAA,Gly,Glu,missense,Síndrome de Rett,patogénica
+,F8,CGA,CAA,Arg,Gln,missense,Hemofilia A,patogénica
+,F8,TGG,TGA,Trp,STOP,nonsense,Hemofilia A,patogénica
+,HTT,CAG,CAG,Glutamina,Expansión,expansion,Enfermedad de Huntington,patogénica
+,APOE,TGC,TAC,Cys,Tyr,missense,Alzheimer (riesgo),factor de riesgo
+,APOE,TGC,TGC,Cys,Cys,silenciosa,Sin efecto clínico,benigna
+,MTHFR,CCT,CTT,Pro,Leu,missense,Deficiencia de folato,probablemente patogénica
+,MTHFR,GAA,GGA,Glu,Gly,missense,Hiperhomocisteinemia,riesgo
+,G6PD,GAA,GCA,Glu,Ala,missense,Deficiencia de G6PD,patogénica
+,G6PD,GAA,GGA,Glu,Gly,missense,Deficiencia de G6PD,variable
+,INS,GGC,AGC,Gly,Ser,missense,Diabetes neonatal,patogénica
+,INS,ATG,ATA,Met,Ile,missense,Diabetes,probablemente patogénica
+,LMNA,CGA,TGA,Arg,STOP,nonsense,Progeria,patogénica
+,LMNA,GGC,GAC,Gly,Asp,missense,Distrofia muscular,patogénica
+,FBN1,TGG,TGA,Trp,STOP,nonsense,Síndrome de Marfan,patogénica
+,FBN1,GGT,GAT,Gly,Asp,missense,Síndrome de Marfan,patogénica
+,COL1A1,GGT,GAT,Gly,Asp,missense,Osteogénesis imperfecta,patogénica
+,COL1A1,TGG,TGA,Trp,STOP,nonsense,Osteogénesis imperfecta,patogénica
+,SOD1,GGT,GAT,Gly,Asp,missense,Esclerosis lateral amiotrófica,patogénica
+,SOD1,GGC,GAC,Gly,Asp,missense,ELA,patogénica
+,APP,GAA,GTA,Glu,Val,missense,Alzheimer familiar,patogénica
+,APP,TGG,TGA,Trp,STOP,nonsense,Alzheimer,patogénica
+,PSEN1,GGT,GAT,Gly,Asp,missense,Alzheimer temprano,patogénica
+,PSEN2,GGT,GAT,Gly,Asp,missense,Alzheimer,patogénica

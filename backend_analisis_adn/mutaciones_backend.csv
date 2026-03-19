@@ -1,0 +1,46 @@
+id,gene,codon_original,codon_mutated,aa_original,aa_mutated,mutation_type,effect,disease,clinical_significance
+HBB_GAG_GTG,HBB,GAG,GTG,Glu,Val,missense,amino_acid_change,Anemia falciforme,pathogenic
+HBB_CTC_CAC,HBB,CTC,CAC,Leu,His,missense,amino_acid_change,Hemoglobinopatía variante,pathogenic
+CFTR_TTT_null,CFTR,TTT,,Phe,,frameshift,protein_disrupted,Fibrosis quística,pathogenic
+CFTR_GGT_GTT,CFTR,GGT,GTT,Gly,Val,missense,amino_acid_change,Fibrosis quística (variante leve),uncertain
+PAH_GAA_TAA,PAH,GAA,TAA,Glu,STOP,nonsense,protein_truncated,Fenilcetonuria,pathogenic
+PAH_GAA_GAC,PAH,GAA,GAC,Glu,Asp,missense,amino_acid_change,Fenilcetonuria (variante),likely_pathogenic
+BRCA1_TAC_TAA,BRCA1,TAC,TAA,Tyr,STOP,nonsense,protein_truncated,Cáncer de mama hereditario,pathogenic
+BRCA1_AAA_AGA,BRCA1,AAA,AGA,Lys,Arg,missense,amino_acid_change,Cáncer de mama (riesgo),likely_pathogenic
+BRCA2_TGG_TGA,BRCA2,TGG,TGA,Trp,STOP,nonsense,protein_truncated,Cáncer de mama/ovario,pathogenic
+TP53_CGA_TGA,TP53,CGA,TGA,Arg,STOP,nonsense,protein_truncated,Cáncer,pathogenic
+TP53_CGG_CAG,TP53,CGG,CAG,Arg,Gln,missense,amino_acid_change,Cáncer,pathogenic
+TP53_GGC_GAC,TP53,GGC,GAC,Gly,Asp,missense,amino_acid_change,Cáncer,pathogenic
+BRAF_GTG_GAG,BRAF,GTG,GAG,Val,Glu,missense,amino_acid_change,Melanoma,pathogenic
+BRAF_GGT_GAT,BRAF,GGT,GAT,Gly,Asp,missense,amino_acid_change,Cáncer tiroideo,pathogenic
+KRAS_GGT_GAT,KRAS,GGT,GAT,Gly,Asp,missense,amino_acid_change,Cáncer colorrectal,pathogenic
+KRAS_GGT_GTT,KRAS,GGT,GTT,Gly,Val,missense,amino_acid_change,Cáncer pancreático,pathogenic
+EGFR_CTG_ATG,EGFR,CTG,ATG,Leu,Met,missense,amino_acid_change,Cáncer de pulmón,pathogenic
+EGFR_GAA_GGA,EGFR,GAA,GGA,Glu,Gly,missense,amino_acid_change,Cáncer de pulmón,pathogenic
+DMD_TGG_TGA,DMD,TGG,TGA,Trp,STOP,nonsense,protein_truncated,Distrofia muscular de Duchenne,pathogenic
+DMD_AAA_ATA,DMD,AAA,ATA,Lys,Ile,missense,amino_acid_change,Distrofia muscular,likely_pathogenic
+MECP2_CGA_TGA,MECP2,CGA,TGA,Arg,STOP,nonsense,protein_truncated,Síndrome de Rett,pathogenic
+MECP2_GGA_GAA,MECP2,GGA,GAA,Gly,Glu,missense,amino_acid_change,Síndrome de Rett,pathogenic
+F8_CGA_CAA,F8,CGA,CAA,Arg,Gln,missense,amino_acid_change,Hemofilia A,pathogenic
+F8_TGG_TGA,F8,TGG,TGA,Trp,STOP,nonsense,protein_truncated,Hemofilia A,pathogenic
+HTT_CAG_CAG,HTT,CAG,CAG,Glutamina,Expansión,expansion,protein_disrupted,Enfermedad de Huntington,pathogenic
+APOE_TGC_TAC,APOE,TGC,TAC,Cys,Tyr,missense,amino_acid_change,Alzheimer (riesgo),risk_factor
+APOE_TGC_TGC,APOE,TGC,TGC,Cys,Cys,silent,no_effect,Sin efecto clínico,benign
+MTHFR_CCT_CTT,MTHFR,CCT,CTT,Pro,Leu,missense,amino_acid_change,Deficiencia de folato,likely_pathogenic
+MTHFR_GAA_GGA,MTHFR,GAA,GGA,Glu,Gly,missense,amino_acid_change,Hiperhomocisteinemia,risk_factor
+G6PD_GAA_GCA,G6PD,GAA,GCA,Glu,Ala,missense,amino_acid_change,Deficiencia de G6PD,pathogenic
+G6PD_GAA_GGA,G6PD,GAA,GGA,Glu,Gly,missense,amino_acid_change,Deficiencia de G6PD,uncertain
+INS_GGC_AGC,INS,GGC,AGC,Gly,Ser,missense,amino_acid_change,Diabetes neonatal,pathogenic
+INS_ATG_ATA,INS,ATG,ATA,Met,Ile,missense,amino_acid_change,Diabetes,likely_pathogenic
+LMNA_CGA_TGA,LMNA,CGA,TGA,Arg,STOP,nonsense,protein_truncated,Progeria,pathogenic
+LMNA_GGC_GAC,LMNA,GGC,GAC,Gly,Asp,missense,amino_acid_change,Distrofia muscular,pathogenic
+FBN1_TGG_TGA,FBN1,TGG,TGA,Trp,STOP,nonsense,protein_truncated,Síndrome de Marfan,pathogenic
+FBN1_GGT_GAT,FBN1,GGT,GAT,Gly,Asp,missense,amino_acid_change,Síndrome de Marfan,pathogenic
+COL1A1_GGT_GAT,COL1A1,GGT,GAT,Gly,Asp,missense,amino_acid_change,Osteogénesis imperfecta,pathogenic
+COL1A1_TGG_TGA,COL1A1,TGG,TGA,Trp,STOP,nonsense,protein_truncated,Osteogénesis imperfecta,pathogenic
+SOD1_GGT_GAT,SOD1,GGT,GAT,Gly,Asp,missense,amino_acid_change,Esclerosis lateral amiotrófica,pathogenic
+SOD1_GGC_GAC,SOD1,GGC,GAC,Gly,Asp,missense,amino_acid_change,ELA,pathogenic
+APP_GAA_GTA,APP,GAA,GTA,Glu,Val,missense,amino_acid_change,Alzheimer familiar,pathogenic
+APP_TGG_TGA,APP,TGG,TGA,Trp,STOP,nonsense,protein_truncated,Alzheimer,pathogenic
+PSEN1_GGT_GAT,PSEN1,GGT,GAT,Gly,Asp,missense,amino_acid_change,Alzheimer temprano,pathogenic
+PSEN2_GGT_GAT,PSEN2,GGT,GAT,Gly,Asp,missense,amino_acid_change,Alzheimer,pathogenic
