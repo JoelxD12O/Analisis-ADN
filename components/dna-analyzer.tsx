@@ -243,6 +243,39 @@ function MutationInsightCard({ mutation }: { mutation: MutationDetail }) {
     }
   };
 
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [submitSuccess, setSubmitSuccess] = useState(false);
+  const [diseaseInput, setDiseaseInput] = useState("");
+  const [notesInput, setNotesInput] = useState("");
+
+  const handleUploadToDb = async () => {
+    if (!diseaseInput.trim()) return;
+    setIsSubmitting(true);
+    try {
+      const res = await fetch("/api/lab/db-entries", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          codon_original: mutation.originalCodon,
+          codon_mutated: mutation.mutatedCodon,
+          aa_original: mutation.originalAminoAcid,
+          aa_mutated: mutation.mutatedAminoAcid,
+          mutation_type: mutation.type.toLowerCase(),
+          disease: diseaseInput,
+          notes: notesInput,
+          clinical_significance: "uncertain",
+        }),
+      });
+      if (res.ok) {
+        setSubmitSuccess(true);
+      }
+    } catch (error) {
+      console.error("Error uploading to DB:", error);
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
   return (
     <details
       className="rounded-[1.3rem] border border-black/8 bg-white/75 px-4 py-3 shadow-[0_14px_50px_rgba(15,23,42,0.05)]"
@@ -347,6 +380,47 @@ function MutationInsightCard({ mutation }: { mutation: MutationDetail }) {
             del cambio de codon y aminoacido, sin una asociacion clinica especifica cargada
             en la BD.
           </p>
+          {!submitSuccess ? (
+            <div className="mt-4 flex flex-col gap-2 border-t border-amber-200/50 pt-3">
+              <span className="block text-[10px] font-bold uppercase tracking-[0.12em] text-amber-700/60 mb-1">
+                ¿Conoces esta variante? Súbelo a la BD:
+              </span>
+              <div className="flex flex-col sm:flex-row gap-2">
+                <input
+                  type="text"
+                  placeholder="Enfermedad (p.ej. Anemia falciforme)..."
+                  className="flex-1 rounded-xl border border-amber-300 bg-white/50 px-3 py-1.5 text-xs focus:outline-none focus:border-amber-500"
+                  value={diseaseInput}
+                  onChange={(e) => setDiseaseInput(e.target.value)}
+                />
+                <input
+                  type="text"
+                  placeholder="Notas opcionales..."
+                  className="flex-1 rounded-xl border border-amber-300 bg-white/50 px-3 py-1.5 text-xs focus:outline-none focus:border-amber-500"
+                  value={notesInput}
+                  onChange={(e) => setNotesInput(e.target.value)}
+                />
+                <button
+                  onClick={() => void handleUploadToDb()}
+                  disabled={isSubmitting || !diseaseInput.trim()}
+                  className="rounded-xl bg-amber-600 text-white px-4 py-1.5 text-xs font-bold hover:bg-amber-700 disabled:opacity-50 transition sm:min-w-[100px]"
+                >
+                  {isSubmitting ? "Subiendo..." : "Subir a BD"}
+                </button>
+              </div>
+            </div>
+          ) : (
+            <div className="mt-3 py-2 px-3 rounded-xl bg-emerald-100 text-emerald-700 font-bold text-xs flex items-center gap-2">
+              <svg viewBox="0 0 20 20" fill="currentColor" className="w-4 h-4">
+                <path
+                  fillRule="evenodd"
+                  d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"
+                  clipRule="evenodd"
+                />
+              </svg>
+              ¡Variante subida con éxito! pronto aparecerá en el lab.
+            </div>
+          )}
         </div>
       ) : null}
     </details>
@@ -542,7 +616,7 @@ export function DnaAnalyzer() {
           <div className="mb-6">
             <div className="mb-3 flex items-center justify-between gap-3">
               <span className="block text-xs font-bold text-accent-strong/60 uppercase tracking-widest">
-              Ejemplos detectables en la BD
+                Ejemplos detectables en la BD
               </span>
               <div className="flex items-center gap-2">
                 <button
@@ -578,11 +652,10 @@ export function DnaAnalyzer() {
                     setSelectedBase(null);
                     setSelectedExampleName(example.name);
                   }}
-                  className={`rounded-2xl border px-4 py-3 text-left shadow-[0_14px_40px_rgba(15,23,42,0.05)] transition-all duration-200 hover:-translate-y-[1px] hover:bg-white ${
-                    selectedExampleName === example.name
-                      ? "border-emerald-400 bg-emerald-50/80 ring-2 ring-emerald-200"
-                      : "border-black/8 bg-white/70 hover:border-accent/25"
-                  }`}
+                  className={`rounded-2xl border px-4 py-3 text-left shadow-[0_14px_40px_rgba(15,23,42,0.05)] transition-all duration-200 hover:-translate-y-[1px] hover:bg-white ${selectedExampleName === example.name
+                    ? "border-emerald-400 bg-emerald-50/80 ring-2 ring-emerald-200"
+                    : "border-black/8 bg-white/70 hover:border-accent/25"
+                    }`}
                   title={example.description}
                 >
                   <div className="flex items-center justify-between gap-3">
@@ -833,6 +906,47 @@ export function DnaAnalyzer() {
           )}
         </SectionCard>
       </section>
+
+      <footer className="collaborators-footer">
+        <div className="collaborators-footer__inner">
+          <span className="collaborators-footer__label">Desarrollado por</span>
+          <div className="collaborators-footer__team">
+            <a
+              href="https://github.com/JoelxD12O"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="collaborators-footer__link"
+            >
+              <svg viewBox="0 0 24 24" aria-hidden="true" fill="currentColor">
+                <path d="M12 2C6.477 2 2 6.477 2 12c0 4.418 2.865 8.166 6.839 9.489.5.092.682-.217.682-.482 0-.237-.009-.868-.013-1.703-2.782.604-3.369-1.34-3.369-1.34-.454-1.156-1.11-1.463-1.11-1.463-.908-.62.069-.608.069-.608 1.003.07 1.531 1.03 1.531 1.03.892 1.529 2.341 1.087 2.91.831.092-.646.35-1.086.636-1.336-2.22-.253-4.555-1.11-4.555-4.943 0-1.091.39-1.984 1.029-2.683-.103-.253-.446-1.27.098-2.647 0 0 .84-.269 2.75 1.025A9.578 9.578 0 0 1 12 6.836c.85.004 1.705.114 2.504.336 1.909-1.294 2.747-1.025 2.747-1.025.546 1.377.202 2.394.1 2.647.64.699 1.028 1.592 1.028 2.683 0 3.842-2.339 4.687-4.566 4.935.359.309.678.919.678 1.852 0 1.336-.012 2.415-.012 2.743 0 .267.18.578.688.48C19.138 20.163 22 16.418 22 12c0-5.523-4.477-10-10-10z" />
+              </svg>
+              Joel
+            </a>
+            <a
+              href="https://github.com/xiomarasalvatierra-bal"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="collaborators-footer__link"
+            >
+              <svg viewBox="0 0 24 24" aria-hidden="true" fill="currentColor">
+                <path d="M12 2C6.477 2 2 6.477 2 12c0 4.418 2.865 8.166 6.839 9.489.5.092.682-.217.682-.482 0-.237-.009-.868-.013-1.703-2.782.604-3.369-1.34-3.369-1.34-.454-1.156-1.11-1.463-1.11-1.463-.908-.62.069-.608.069-.608 1.003.07 1.531 1.03 1.531 1.03.892 1.529 2.341 1.087 2.91.831.092-.646.35-1.086.636-1.336-2.22-.253-4.555-1.11-4.555-4.943 0-1.091.39-1.984 1.029-2.683-.103-.253-.446-1.27.098-2.647 0 0 .84-.269 2.75 1.025A9.578 9.578 0 0 1 12 6.836c.85.004 1.705.114 2.504.336 1.909-1.294 2.747-1.025 2.747-1.025.546 1.377.202 2.394.1 2.647.64.699 1.028 1.592 1.028 2.683 0 3.842-2.339 4.687-4.566 4.935.359.309.678.919.678 1.852 0 1.336-.012 2.415-.012 2.743 0 .267.18.578.688.48C19.138 20.163 22 16.418 22 12c0-5.523-4.477-10-10-10z" />
+              </svg>
+              Xiomara
+            </a>
+          </div>
+          <a
+            href="https://github.com/JoelxD12O/Analisis-ADN"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="collaborators-footer__repo"
+          >
+            <svg viewBox="0 0 16 16" aria-hidden="true" fill="currentColor" width="13" height="13">
+              <path d="M2 2.5A2.5 2.5 0 0 1 4.5 0h8.75a.75.75 0 0 1 .75.75v12.5a.75.75 0 0 1-.75.75h-2.5a.75.75 0 0 1 0-1.5h1.75v-2h-8a1 1 0 0 0-.714 1.7.75.75 0 1 1-1.072 1.05A2.495 2.495 0 0 1 2 11.5Zm10.5-1h-8a1 1 0 0 0-1 1v6.708A2.486 2.486 0 0 1 4.5 9h8Z" />
+            </svg>
+            Ver repositorio
+          </a>
+        </div>
+      </footer>
     </main>
   );
 }

@@ -10,6 +10,7 @@ provider:
 
   environment:
     TABLE_NAME: MutacionesTable
+    MISSES_TABLE_NAME: MutationMisses
 
   iam:
     role:
@@ -19,8 +20,12 @@ provider:
             - dynamodb:GetItem
             - dynamodb:Query
             - dynamodb:Scan
+            - dynamodb:PutItem
+            - dynamodb:UpdateItem
+            - dynamodb:DeleteItem
           Resource:
             - arn:aws:dynamodb:us-east-1:*:table/MutacionesTable
+            - arn:aws:dynamodb:us-east-1:*:table/MutationMisses
 
 functions:
   analyzeMutation:
@@ -30,12 +35,52 @@ functions:
           path: /analyze
           method: post
 
+  getMisses:
+    handler: handler.get_misses
+    events:
+      - httpApi:
+          path: /misses
+          method: get
+
+  createMiss:
+    handler: handler.create_miss
+    events:
+      - httpApi:
+          path: /misses
+          method: post
+
+  getDbEntries:
+    handler: handler.get_db_entries
+    events:
+      - httpApi:
+          path: /db-entries
+          method: get
+
+  createDbEntry:
+    handler: handler.create_db_entry
+    events:
+      - httpApi:
+          path: /db-entries
+          method: post
+
 resources:
   Resources:
     MutacionesTable:
       Type: AWS::DynamoDB::Table
       Properties:
         TableName: MutacionesTable
+        BillingMode: PAY_PER_REQUEST
+        AttributeDefinitions:
+          - AttributeName: id
+            AttributeType: S
+        KeySchema:
+          - AttributeName: id
+            KeyType: HASH
+
+    MutationMisses:
+      Type: AWS::DynamoDB::Table
+      Properties:
+        TableName: MutationMisses
         BillingMode: PAY_PER_REQUEST
         AttributeDefinitions:
           - AttributeName: id
